@@ -1,0 +1,189 @@
+erDiagram
+    USERS {
+        bigint id PK
+        string name
+        string email UK
+        timestamp email_verified_at
+        string password
+        string remember_token
+        timestamps created_at
+        timestamps updated_at
+    }
+
+    RECIPES {
+        bigint id PK
+        bigint user_id FK
+        string title
+        text description
+        text instructions
+        int prep_time "minutes"
+        int cook_time "minutes"
+        int servings
+        string difficulty "easy|medium|hard"
+        string cuisine_type "italian|mexican|asian|etc"
+        string image_path
+        boolean is_public
+        float average_rating
+        int total_reviews
+        timestamps created_at
+        timestamps updated_at
+    }
+
+    INGREDIENTS {
+        bigint id PK
+        string name UK
+        string category "produce|dairy|meat|pantry|etc"
+        timestamps created_at
+        timestamps updated_at
+    }
+
+    RECIPE_INGREDIENTS {
+        bigint id PK
+        bigint recipe_id FK
+        bigint ingredient_id FK
+        decimal quantity "8,2"
+        string unit
+        text notes "optional, minced, to taste"
+        timestamps created_at
+        timestamps updated_at
+    }
+
+    CATEGORIES {
+        bigint id PK
+        bigint user_id FK
+        string name
+        string color_hex
+        string description
+        timestamps created_at
+        timestamps updated_at
+    }
+
+    RECIPE_CATEGORIES {
+        bigint recipe_id FK
+        bigint category_id FK
+    }
+
+    MEAL_PLANS {
+        bigint id PK
+        bigint user_id FK
+        bigint recipe_id FK
+        date planned_date
+        enum meal_type "breakfast|lunch|dinner|snack"
+        int servings
+        text notes
+        timestamps created_at
+        timestamps updated_at
+    }
+
+    SHOPPING_LISTS {
+        bigint id PK
+        bigint user_id FK
+        string name
+        date start_date
+        date end_date
+        boolean is_completed
+        timestamps created_at
+        timestamps updated_at
+    }
+
+    SHOPPING_LIST_ITEMS {
+        bigint id PK
+        bigint shopping_list_id FK
+        bigint ingredient_id FK
+        decimal quantity "8,2"
+        string unit
+        boolean is_purchased
+        decimal estimated_cost "8,2"
+        text notes
+        timestamps created_at
+        timestamps updated_at
+    }
+
+    RECIPE_REVIEWS {
+        bigint id PK
+        bigint recipe_id FK
+        bigint user_id FK
+        int rating "1-5"
+        text comment
+        timestamps created_at
+        timestamps updated_at
+    }
+
+    COLLECTIONS {
+        bigint id PK
+        bigint user_id FK
+        string name
+        text description
+        boolean is_public
+        string image_path
+        timestamps created_at
+        timestamps updated_at
+    }
+
+    COLLECTION_RECIPES {
+        bigint collection_id FK
+        bigint recipe_id FK
+        timestamps created_at
+    }
+
+    USER_FOLLOWS {
+        bigint follower_id FK
+        bigint following_id FK
+        timestamps created_at
+    }
+
+    RECIPE_TAGS {
+        bigint id PK
+        string name UK
+        string slug UK
+        timestamps created_at
+        timestamps updated_at
+    }
+
+    RECIPE_TAG_PIVOT {
+        bigint recipe_id FK
+        bigint tag_id FK
+    }
+
+    NUTRITIONAL_INFO {
+        bigint id PK
+        bigint recipe_id FK
+        int calories_per_serving
+        decimal protein "5,2"
+        decimal carbs "5,2"
+        decimal fat "5,2"
+        decimal fiber "5,2"
+        decimal sugar "5,2"
+        decimal sodium "5,2"
+        timestamps created_at
+        timestamps updated_at
+    }
+
+    %% Relationships
+    USERS ||--o{ RECIPES : creates
+    USERS ||--o{ MEAL_PLANS : plans
+    USERS ||--o{ SHOPPING_LISTS : owns
+    USERS ||--o{ RECIPE_REVIEWS : writes
+    USERS ||--o{ COLLECTIONS : creates
+    USERS ||--o{ CATEGORIES : creates
+    USERS ||--o{ USER_FOLLOWS : "follower"
+    USERS ||--o{ USER_FOLLOWS : "following"
+
+    RECIPES ||--o{ RECIPE_INGREDIENTS : contains
+    RECIPES ||--o{ MEAL_PLANS : "planned_as"
+    RECIPES ||--o{ RECIPE_REVIEWS : receives
+    RECIPES ||--o{ COLLECTION_RECIPES : "in_collections"
+    RECIPES ||--o{ RECIPE_CATEGORIES : "has_categories"
+    RECIPES ||--o{ RECIPE_TAG_PIVOT : "has_tags"
+    RECIPES ||--o| NUTRITIONAL_INFO : "has_nutrition"
+
+    INGREDIENTS ||--o{ RECIPE_INGREDIENTS : "used_in"
+    INGREDIENTS ||--o{ SHOPPING_LIST_ITEMS : "on_lists"
+
+    CATEGORIES ||--o{ RECIPE_CATEGORIES : categorizes
+
+    SHOPPING_LISTS ||--o{ SHOPPING_LIST_ITEMS : contains
+
+    COLLECTIONS ||--o{ COLLECTION_RECIPES : contains
+
+    RECIPE_TAGS ||--o{ RECIPE_TAG_PIVOT : "tags_recipes"

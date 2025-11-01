@@ -1,0 +1,87 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: developer
+      changes:
+        - createTable:
+            tableName: recipes
+            columns:
+              - column:
+                  name: id 
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: title
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: TEXT
+              - column:
+                  name: instructions
+                  type: TEXT
+              - column:
+                  name: prep_time
+                  type: INTEGER
+              - column:
+                  name: cook_time
+                  type: INTEGER
+              - column:
+                  name: servings
+                  type: INTEGER
+              - column:
+                  name: difficulty
+                  type: VARCHAR(25)
+              - column:
+                  name: cuisine_type
+                  type: VARCHAR(255)
+              - column:
+                  name: image_url
+                  type: VARCHAR(255)
+              - column:
+                  name: is_public
+                  type: BOOLEAN
+              - column:
+                  name: average_rating
+                  type: DECIMAL(2,1)
+              - column:
+                  name: total_reviews
+                  type: INTEGER
+              - column:
+                  name: created_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+                  defaultValueComputed: CURRENT_TIMESTAMP
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+                  defaultValueComputed: CURRENT_TIMESTAMP
+              - column:
+                  name: deleted
+                  type: BOOLEAN
+                  constraints:
+                    nullable: false
+                  defaultValue: false
+              - column:
+                  name: deleted_at
+                  type: timestamp
+        - addForeignKeyConstraint:
+            baseTableName: recipes
+            baseColumnNames: user_id
+            constraintName: fk_recipes_user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            onDelete: CASCADE
+            onUpdate: CASCADE
