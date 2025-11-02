@@ -1,10 +1,10 @@
 -- -- Clear any existing data
--- DELETE FROM recipes;
--- DELETE FROM users;
+DELETE FROM recipes;
+DELETE FROM users;
 --
 -- -- Reset auto-increment to ensure we get ID 1
--- ALTER TABLE recipes ALTER COLUMN id RESTART WITH 1;
--- ALTER TABLE users ALTER COLUMN id RESTART WITH 1;
+ALTER TABLE recipes ALTER COLUMN id RESTART WITH 1;
+ALTER TABLE users ALTER COLUMN id RESTART WITH 1;
 
 INSERT INTO users(username, email, password)
 VALUES ('somebody', 'somebody@mail.com', 'password');
@@ -19,5 +19,5 @@ INSERT INTO recipes (title, description, prep_time, cook_time, deleted, deleted_
 ('Deleted Recipe', 'This recipe should not appear in results', 5, 10, true, CURRENT_TIMESTAMP, 1);
 
 -- -- Add a specific recipe with ID 100 for the delete test
--- INSERT INTO recipes(id, title, description, prep_time, cook_time, user_id) 
--- VALUES (100, 'Recipe to delete', 'It dont matter', 15, 20, 1);
+INSERT INTO recipes(id, title, description, prep_time, cook_time, user_id) 
+VALUES (100, 'Recipe to delete', 'It dont matter', 15, 20, 1);

@@ -6,6 +6,8 @@ import java.io.File;
 import java.util.List;
 import java.util.Objects;
 
+import jakarta.persistence.EntityManager;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import org.junit.jupiter.api.Test;
@@ -33,6 +35,9 @@ public class RecipeFunctionalTest {
   @Autowired
   private RecipeRepository recipeRepository;
 
+  @Autowired
+  private EntityManager entityManager;
+
   @Test
   public void shouldReturnAllRecipesWhenGetIsCalled() {
     ResponseEntity<List<Recipe>> response = restTemplate.exchange("/api/recipes",
@@ -40,7 +45,7 @@ public class RecipeFunctionalTest {
         new ParameterizedTypeReference<List<Recipe>>() {
         });
     assertTrue(response.getStatusCode().is2xxSuccessful());
-    assertTrue(response.getBody().size() == 3);
+    assertTrue(response.getBody().size() == 4);
     List<Recipe> recipes = response.getBody();
     assertTrue(recipes.stream().anyMatch(recipe -> recipe.getTitle().equals("Spaghetti Carbonara")));
   }
@@ -108,11 +113,18 @@ public class RecipeFunctionalTest {
 
   @Test
   public void shouldSoftDeleteRecipeWhenDeleteIsCalled() {
-    assertTrue(true);
-    // Recipe recipe = recipeRepository.findById(100L).orElse(null);
-    // assertTrue(recipe != null);
-    // assertTrue(!recipe.getDeleted());
-    // restTemplate.delete("/api/recipes/100");
+    Recipe recipe = recipeRepository.findById(100L).orElse(null);
+    assertTrue(recipe != null);
+    assertTrue(!recipe.getDeleted());
+    restTemplate.delete("/api/recipes/100");
+    assertTrue(recipeRepository.findById(100L).isEmpty());
+
+    entityManager.clear();
+    Recipe deletedRecipe = (Recipe) entityManager
+        .createNativeQuery("SELECT * FROM recipes WHERE id = 100", Recipe.class)
+        .getSingleResult();
+
+    assertTrue(deletedRecipe.getDeleted());
   }
 
 }

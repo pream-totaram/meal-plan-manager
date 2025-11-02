@@ -99,41 +99,17 @@ public class Recipe {
   }
 
   public void applyUpdate(Recipe update) {
-    if (update.getTitle() != null) {
-      this.title = update.getTitle();
-    }
-    if (update.getDescription() != null) {
-      this.description = update.getDescription();
-    }
-    if (update.getInstructions() != null) {
-      this.instructions = update.getInstructions();
-    }
-    if (update.getPrepTime() != null) {
-      this.prepTime = update.getPrepTime();
-    }
-    if (update.getCookTime() != null) {
-      this.cookTime = update.getCookTime();
-    }
-    if (update.getServings() != null) {
-      this.servings = update.getServings();
-    }
-    if (update.getDifficulty() != null) {
-      this.difficulty = update.getDifficulty();
-    }
-    if (update.getCuisineType() != null) {
-      this.cuisineType = update.getCuisineType();
-    }
-    if (update.getImage() != null) {
-      this.image = update.getImage();
-    }
-    if (update.getIsPublic() != null) {
-      this.isPublic = update.getIsPublic();
-    }
-    if (update.getAverageRating() != null) {
-      this.averageRating = update.getAverageRating();
-    }
-    if (update.getTotalReviews() != null) {
-      this.totalReviews = update.getTotalReviews();
-    }
+    this.title = update.getTitle();
+    this.description = update.getDescription();
+    this.instructions = update.getInstructions();
+    this.prepTime = update.getPrepTime();
+    this.cookTime = update.getCookTime();
+    this.servings = update.getServings();
+    this.difficulty = update.getDifficulty();
+    this.cuisineType = update.getCuisineType();
+    this.image = update.getImage();
+    this.isPublic = update.getIsPublic();
+    this.averageRating = update.getAverageRating();
+    this.totalReviews = update.getTotalReviews();
   }
 }
