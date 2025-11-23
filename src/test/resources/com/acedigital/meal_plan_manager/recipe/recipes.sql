@@ -1,13 +1,8 @@
 -- -- Clear any existing data
 DELETE FROM recipes;
-DELETE FROM users;
 --
 -- -- Reset auto-increment to ensure we get ID 1
 ALTER TABLE recipes ALTER COLUMN id RESTART WITH 1;
-ALTER TABLE users ALTER COLUMN id RESTART WITH 1;
-
-INSERT INTO users(username, email, password)
-VALUES ('somebody', 'somebody@mail.com', 'password');
 
 INSERT INTO recipes(title, description, prep_time, cook_time, user_id) VALUES 
 ('Spaghetti Carbonara', 'Classic Italian pasta dish', 15, 20, 1),

@@ -1,0 +1,31 @@
+server:
+  error:
+    include-message: always
+    include-binding-errors: always
+  port: 8080
+spring:
+  application:
+    name: meal-plan-manager
+  datasource:
+    url: jdbc:postgresql://localhost:5432/meal_plan_db
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yml
+  jpa:
+    hibernate:
+      ddl-auto: update
+      show-sql: true
+      dialect: org.hibernate.dialect.PostgreSQLDialect
+
+eureka:
+  client:
+    enabled: false
+    register-with-eureka: false
+    fetch-registry: false
+  # client:
+  #   register-with-eureka: true
+  #   fetch-registry: true
+  # instance:
+  #   prefer-ip-address: true
