@@ -25,7 +25,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class RecipeController {
   private final RecipeRepository recipeRepository;
-  private final UserRepository userRepository;
 
   // Implement CRUD operations for Recipe entity
   @GetMapping
