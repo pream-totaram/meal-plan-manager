@@ -52,10 +52,8 @@ public class RecipeFunctionalTest {
   @Autowired
   private EntityManager entityManager;
 
-  @BeforeEach
+  @BeforeAll
   void setUp() {
-    recipeRepository.deleteAll();
-    userRepository.deleteAll();
 
     // Create and save a test user
     User user = new User();
@@ -82,20 +80,18 @@ public class RecipeFunctionalTest {
   }
 
   @Test
-  @Disabled
   public void shouldReturnAllRecipesWhenGetIsCalled() {
     ResponseEntity<List<Recipe>> response = restTemplate.exchange("/api/recipes",
         HttpMethod.GET, null,
         new ParameterizedTypeReference<List<Recipe>>() {
         });
     assertTrue(response.getStatusCode().is2xxSuccessful());
-    assertTrue(response.getBody().size() == 4);
     List<Recipe> recipes = response.getBody();
+    assertTrue(recipes.size() == 3);
     assertTrue(recipes.stream().anyMatch(recipe -> recipe.getTitle().equals("Spaghetti Carbonara")));
   }
 
   @Test
-  @Disabled
   public void shouldReturnCorrectRecipeDetailsWhenGetByIdIsCalled() {
     ResponseEntity<Recipe> response = restTemplate.getForEntity("/api/recipes/1",
         Recipe.class);
@@ -127,14 +123,12 @@ public class RecipeFunctionalTest {
     ResponseEntity<String> response = restTemplate.withBasicAuth("somebody", "password")
         .postForEntity("/api/recipes",
             newRecipe, String.class);
-    System.out.println(response.getBody());
-    // Recipe createdRecipe = response.getBody();
-    // assertTrue(createdRecipe.getTitle().equals("Tacos"));
-    // assertTrue(createdRecipe.getId() > 4);
+
+    assertTrue(response.getStatusCode().is2xxSuccessful());
+    assertTrue(response.getHeaders().get("Location").get(0).contains("/api/recipes/"));
   }
 
   @Test
-  @Disabled
   public void shouldUpdateRecipeWhenPutIsCalled() {
     Recipe update = Recipe.builder()
         .title("Updated Spaghetti Carbonara")
@@ -160,17 +154,16 @@ public class RecipeFunctionalTest {
   }
 
   @Test
-  @Disabled
   public void shouldSoftDeleteRecipeWhenDeleteIsCalled() {
-    Recipe recipe = recipeRepository.findById(100L).orElse(null);
+    Recipe recipe = recipeRepository.findById(2L).orElse(null);
     assertTrue(recipe != null);
     assertTrue(!recipe.getDeleted());
-    restTemplate.delete("/api/recipes/100");
-    assertTrue(recipeRepository.findById(100L).isEmpty());
+    restTemplate.delete("/api/recipes/2");
+    assertTrue(recipeRepository.findById(2L).isEmpty());
 
     entityManager.clear();
     Recipe deletedRecipe = (Recipe) entityManager
-        .createNativeQuery("SELECT * FROM recipes WHERE id = 100", Recipe.class)
+        .createNativeQuery("SELECT * FROM recipes WHERE id = 2", Recipe.class)
         .getSingleResult();
 
     assertTrue(deletedRecipe.getDeleted());
