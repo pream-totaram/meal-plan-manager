@@ -1,5 +1,6 @@
 package com.acedigital.meal_plan_manager.recipe;
 
+import java.security.Principal;
 import java.util.List;
 
 import com.acedigital.meal_plan_manager.user.UserRepository;
@@ -38,9 +39,13 @@ public class RecipeController {
   }
 
   @PostMapping
-  public ResponseEntity<Recipe> createRecipe(@RequestBody Recipe recipe) {
-    recipe.setUser(userRepository.findById(1L).orElseThrow(() -> new IllegalArgumentException("User not found")));
-    return ResponseEntity.ok(recipeRepository.save(recipe));
+  public ResponseEntity<Recipe> createRecipe(@RequestBody Recipe recipe, Principal principal) {
+    System.out.println("~~~~~~~~~~~~~");
+    System.out.println("User: " + principal.getName());
+    System.out.println("~~~~~~~~~~~~~");
+    return null;
+
+    // return ResponseEntity.ok(recipeRepository.save(recipe));
   }
 
   @PutMapping("/{id}")

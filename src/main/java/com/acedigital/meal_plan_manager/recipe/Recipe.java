@@ -2,6 +2,7 @@ package com.acedigital.meal_plan_manager.recipe;
 
 import java.io.File;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -86,7 +87,7 @@ public class Recipe {
   Boolean deleted = false;
 
   @Column(name = "deleted_at")
-  Timestamp deletedAt;
+  LocalDateTime deletedAt;
 
   @JsonProperty("imagePath")
   public String getImagePath() {
