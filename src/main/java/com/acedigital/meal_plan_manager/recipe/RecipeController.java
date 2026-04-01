@@ -1,12 +1,11 @@
 package com.acedigital.meal_plan_manager.recipe;
 
 import java.net.URI;
-import java.security.Principal;
 import java.util.List;
 
 import com.acedigital.meal_plan_manager.user.User;
-import com.acedigital.meal_plan_manager.user.UserRepository;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -24,13 +23,16 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/recipes")
 @RequiredArgsConstructor
 public class RecipeController {
-  private final RecipeRepository recipeRepository;
+  @Autowired
+  private RecipeRepository recipeRepository;
+
+  @Autowired
+  private RecipeService recipeService;
 
   // Implement CRUD operations for Recipe entity
   @GetMapping
   public ResponseEntity<List<Recipe>> getAllRecipes() {
-    List<Recipe> recipes = recipeRepository.findAll();
-    return ResponseEntity.ok(recipes);
+    return recipeService.getAllRecipes();
   }
 
   @GetMapping("/{id}")
@@ -42,6 +44,8 @@ public class RecipeController {
 
   @PostMapping
   public ResponseEntity<URI> createRecipe(@RequestBody Recipe recipe, @AuthenticationPrincipal User currentUser) {
+    System.out.println("DEBUG LINE");
+    System.out.println(currentUser);
     recipe.setUser(currentUser);
     return ResponseEntity
         .created(URI.create("/api/recipes/" + recipeRepository.save(recipe).getId()))
