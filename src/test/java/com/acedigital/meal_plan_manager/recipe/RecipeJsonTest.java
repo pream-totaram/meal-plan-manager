@@ -2,7 +2,6 @@ package com.acedigital.meal_plan_manager.recipe;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.io.File;
 import java.io.IOException;
 
 import org.junit.jupiter.api.Test;
@@ -29,14 +28,13 @@ public class RecipeJsonTest {
         .servings(4)
         .difficulty(Difficulty.EASY)
         .cuisineType(CuisineType.ITALIAN)
-        .image(new File("test-image.jpg"))
+        .imageUrl("https://example.com/test-image.jpg")
         .isPublic(true)
         .averageRating(4.5)
         .totalReviews(10)
         .build();
 
     JsonContent<Recipe> jsonContent = json.write(recipe);
-    // Add assertions for JSON content
     assertThat(jsonContent).extractingJsonPathNumberValue("$.id").isEqualTo(1);
     assertThat(jsonContent).extractingJsonPathStringValue("$.title").isEqualTo("Test Recipe");
     assertThat(jsonContent).extractingJsonPathStringValue("$.description").isEqualTo("This is a test recipe.");
@@ -47,7 +45,8 @@ public class RecipeJsonTest {
     assertThat(jsonContent).extractingJsonPathNumberValue("$.servings").isEqualTo(4);
     assertThat(jsonContent).extractingJsonPathStringValue("$.difficulty").isEqualTo(Difficulty.EASY.name());
     assertThat(jsonContent).extractingJsonPathStringValue("$.cuisineType").isEqualTo(CuisineType.ITALIAN.name());
-    assertThat(jsonContent).extractingJsonPathStringValue("$.imagePath").contains("test-image.jpg");
+    assertThat(jsonContent).extractingJsonPathStringValue("$.imageUrl")
+        .isEqualTo("https://example.com/test-image.jpg");
     assertThat(jsonContent).extractingJsonPathBooleanValue("$.isPublic").isTrue();
     assertThat(jsonContent).extractingJsonPathNumberValue("$.averageRating").isEqualTo(4.5);
     assertThat(jsonContent).extractingJsonPathNumberValue("$.totalReviews").isEqualTo(10);

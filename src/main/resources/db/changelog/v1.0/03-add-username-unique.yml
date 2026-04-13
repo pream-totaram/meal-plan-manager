@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - changeSet:
+      id: 3
+      author: developer
+      comment: >
+        Enforce username uniqueness at the database level so that duplicate
+        registrations cannot corrupt the login flow (two rows returned by
+        findByUsername). This is a required security control — do not drop.
+      changes:
+        - addUniqueConstraint:
+            tableName: users
+            columnNames: username
+            constraintName: uk_users_username

@@ -1,13 +1,16 @@
-app:
+application:
   security:
     jwt:
-      secret_key: "47MOYk+KUBPcWDpJjoQ5ttBUvsb1E6+cDG55GEjpoPI="
+      # Test-only fixture. Real prod key is never committed.
+      # Matches `application.security.jwt.*` so WebSecurityConfig resolves it.
+      secret-key: "47MOYk+KUBPcWDpJjoQ5ttBUvsb1E6+cDG55GEjpoPI="
       expiration: 3600000
 server:
   error:
-    include-message: always
-    include-binding-errors: always
-    include-stacktrace: always
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+    include-exception: false
 spring:
   application:
     name: meal-plan-manager-test
@@ -16,16 +19,15 @@ spring:
     driver-class-name: org.h2.Driver
     username: sa
     password:
+  liquibase:
+    enabled: false
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
-      ddl-auto: none
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.H2Dialect
+      ddl-auto: create-drop
+    open-in-view: false
   h2:
     console:
-      enabled: true
+      enabled: false
 eureka:
   client:
     enabled: false

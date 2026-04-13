@@ -1,6 +1,5 @@
 package com.acedigital.meal_plan_manager.recipe;
 
-import java.io.File;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
@@ -22,21 +21,25 @@ import org.hibernate.annotations.SQLRestriction;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 @Entity
 @Table(name = "recipes")
-@SQLDelete(sql = "UPDATE recipes SET deleted = true WHERE id = ?")
+@SQLDelete(sql = "UPDATE recipes SET deleted = true, deleted_at = NOW() WHERE id = ?")
 @SQLRestriction("deleted = false")
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(exclude = "user")
 public class Recipe {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  Long id;
+  private Long id;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id", nullable = false)
@@ -44,72 +47,54 @@ public class Recipe {
   private User user;
 
   @Column(nullable = false)
-  String title;
+  private String title;
 
   @Column
-  String description;
+  private String description;
 
   @Column
-  String instructions;
+  private String instructions;
 
   @Column
-  Integer prepTime;
+  private Integer prepTime;
 
   @Column
-  Integer cookTime;
+  private Integer cookTime;
 
   @Column
-  Integer servings;
+  private Integer servings;
 
   @Column
-  Difficulty difficulty;
+  private Difficulty difficulty;
 
   @Column
-  CuisineType cuisineType;
+  private CuisineType cuisineType;
 
-  @Column(name = "image_url")
-  @JsonIgnore
-  File image;
-
-  @Column
-  Boolean isPublic;
-
-  @Column
-  Double averageRating;
+  // Storing a bounded String (URL or server-generated UUID filename), never a
+  // java.io.File bound from JSON. A File field would let a caller set
+  // {"image":"/etc/passwd"} and leak server paths via getAbsolutePath().
+  @Column(name = "image_url", length = 512)
+  private String imageUrl;
 
   @Column
-  Integer totalReviews;
+  private Boolean isPublic;
+
+  @Column
+  private Double averageRating;
+
+  @Column
+  private Integer totalReviews;
 
   @Column
   @JsonIgnore
   @Builder.Default
-  Boolean deleted = false;
+  private Boolean deleted = false;
 
   @Column(name = "deleted_at")
-  LocalDateTime deletedAt;
-
-  @JsonProperty("imagePath")
-  public String getImagePath() {
-    return image == null ? "" : image.getAbsolutePath();
-  }
+  private LocalDateTime deletedAt;
 
   @JsonProperty("userId")
   public Long getUserId() {
     return user == null ? null : user.getId();
-  }
-
-  public void applyUpdate(Recipe update) {
-    this.title = update.getTitle();
-    this.description = update.getDescription();
-    this.instructions = update.getInstructions();
-    this.prepTime = update.getPrepTime();
-    this.cookTime = update.getCookTime();
-    this.servings = update.getServings();
-    this.difficulty = update.getDifficulty();
-    this.cuisineType = update.getCuisineType();
-    this.image = update.getImage();
-    this.isPublic = update.getIsPublic();
-    this.averageRating = update.getAverageRating();
-    this.totalReviews = update.getTotalReviews();
   }
 }

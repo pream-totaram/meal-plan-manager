@@ -4,6 +4,26 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+### Secrets / credentials / local env ###
+.env
+.env.*
+!.env.example
+*.env
+application-*.local.yml
+application-*.local.yaml
+application-*.local.properties
+secrets/
+*.pem
+*.p12
+*.pfx
+*.key
+*.keystore
+*.jks
+id_rsa
+id_rsa.*
+id_ed25519
+id_ed25519.*
+
 ### STS ###
 .apt_generated
 .classpath

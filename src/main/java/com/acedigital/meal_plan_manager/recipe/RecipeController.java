@@ -3,9 +3,11 @@ package com.acedigital.meal_plan_manager.recipe;
 import java.net.URI;
 import java.util.List;
 
+import com.acedigital.meal_plan_manager.recipe.dto.CreateRecipeRequest;
+import com.acedigital.meal_plan_manager.recipe.dto.RecipeResponse;
+import com.acedigital.meal_plan_manager.recipe.dto.UpdateRecipeRequest;
 import com.acedigital.meal_plan_manager.user.User;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -17,54 +19,59 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/recipes")
-@RequiredArgsConstructor
 public class RecipeController {
-  @Autowired
-  private RecipeRepository recipeRepository;
 
-  @Autowired
-  private RecipeService recipeService;
+  private final RecipeService recipeService;
 
-  // Implement CRUD operations for Recipe entity
+  public RecipeController(RecipeService recipeService) {
+    this.recipeService = recipeService;
+  }
+
   @GetMapping
-  public ResponseEntity<List<Recipe>> getAllRecipes() {
-    return recipeService.getAllRecipes();
+  public ResponseEntity<List<RecipeResponse>> getMyRecipes(@AuthenticationPrincipal User currentUser) {
+    List<RecipeResponse> body = recipeService.getRecipesFor(currentUser)
+        .stream()
+        .map(RecipeResponse::from)
+        .toList();
+    return ResponseEntity.ok(body);
   }
 
   @GetMapping("/{id}")
-  public ResponseEntity<Recipe> getRecipeById(@PathVariable Long id) {
-    return recipeRepository.findById(id)
-        .map(ResponseEntity::ok)
-        .orElse(ResponseEntity.notFound().build());
+  public ResponseEntity<RecipeResponse> getRecipeById(
+      @PathVariable Long id,
+      @AuthenticationPrincipal User currentUser) {
+    Recipe recipe = recipeService.getRecipeFor(id, currentUser);
+    return ResponseEntity.ok(RecipeResponse.from(recipe));
   }
 
   @PostMapping
-  public ResponseEntity<URI> createRecipe(@RequestBody Recipe recipe, @AuthenticationPrincipal User currentUser) {
-    System.out.println("DEBUG LINE");
-    System.out.println(currentUser);
-    recipe.setUser(currentUser);
+  public ResponseEntity<RecipeResponse> createRecipe(
+      @Valid @RequestBody CreateRecipeRequest request,
+      @AuthenticationPrincipal User currentUser) {
+    Recipe saved = recipeService.createRecipe(request, currentUser);
     return ResponseEntity
-        .created(URI.create("/api/recipes/" + recipeRepository.save(recipe).getId()))
-        .build();
+        .created(URI.create("/api/recipes/" + saved.getId()))
+        .body(RecipeResponse.from(saved));
   }
 
   @PutMapping("/{id}")
-  public ResponseEntity<Recipe> updateRecipe(@PathVariable Long id, @RequestBody Recipe update) {
-    return recipeRepository.findById(id)
-        .map(recipe -> {
-          recipe.applyUpdate(update);
-          return ResponseEntity.ok(recipeRepository.save(recipe));
-        })
-        .orElse(ResponseEntity.notFound().build());
+  public ResponseEntity<RecipeResponse> updateRecipe(
+      @PathVariable Long id,
+      @Valid @RequestBody UpdateRecipeRequest request,
+      @AuthenticationPrincipal User currentUser) {
+    Recipe updated = recipeService.updateRecipe(id, request, currentUser);
+    return ResponseEntity.ok(RecipeResponse.from(updated));
   }
 
   @DeleteMapping("/{id}")
-  public ResponseEntity<Void> softDeleteRecipe(@PathVariable Long id) {
-    recipeRepository.softDelete(id);
-    return ResponseEntity.ok().build();
+  public ResponseEntity<Void> softDeleteRecipe(
+      @PathVariable Long id,
+      @AuthenticationPrincipal User currentUser) {
+    recipeService.softDelete(id, currentUser);
+    return ResponseEntity.noContent().build();
   }
 }

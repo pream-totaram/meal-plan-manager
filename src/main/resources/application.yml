@@ -1,36 +1,40 @@
 application:
   security:
     jwt:
-      secret-key: gde9bqQqixKiZp6YWdVWAgl8mkE4iMQ1EmPFMVbItvI=
-      expiration: 86400000
+      # MUST be supplied via environment variable (e.g. from a secret manager).
+      # For local dev copy .env.example to .env and set JWT_SECRET.
+      secret-key: ${JWT_SECRET}
+      expiration: ${JWT_EXPIRATION_MS:86400000}
 server:
   error:
-    include-message: always
-    include-binding-errors: always
-  port: 8080
+    # Do NOT leak exception messages / binding errors to clients in prod.
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+    include-exception: false
+  port: ${SERVER_PORT:8080}
+  forward-headers-strategy: native
 spring:
   application:
     name: meal-plan-manager
   datasource:
-    url: jdbc:postgresql://localhost:5432/meal_plan_db
-    username: postgres
-    password: postgres
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/meal_plan_db}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yml
   jpa:
     hibernate:
-      ddl-auto: update
-      show-sql: true
-      dialect: org.hibernate.dialect.PostgreSQLDialect
-
+      # Liquibase owns the schema. Do NOT let Hibernate auto-mutate it.
+      ddl-auto: validate
+    show-sql: false
+    # Disable open-session-in-view: avoids holding DB connections open
+    # across view rendering and keeps transactional boundaries tight.
+    open-in-view: false
+    # Dialect is auto-detected from the JDBC driver.
 eureka:
   client:
     enabled: false
     register-with-eureka: false
     fetch-registry: false
-  # client:
-  #   register-with-eureka: true
-  #   fetch-registry: true
-  # instance:
-  #   prefer-ip-address: true

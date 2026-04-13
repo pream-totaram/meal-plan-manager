@@ -2,7 +2,6 @@ package com.acedigital.meal_plan_manager.recipe;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.File;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -128,7 +127,7 @@ public class RecipeFunctionalTest {
         .servings(3)
         .difficulty(Difficulty.EASY)
         .cuisineType(CuisineType.MEXICAN)
-        .image(new File("new-test-image.jpg"))
+        .imageUrl("https://example.com/new-test-image.jpg")
         .isPublic(false)
         .averageRating(3.8)
         .build();
@@ -153,7 +152,7 @@ public class RecipeFunctionalTest {
         .servings(4)
         .difficulty(Difficulty.EASY)
         .cuisineType(CuisineType.ITALIAN)
-        .image(new File("updated-test-image.jpg"))
+        .imageUrl("https://example.com/updated-test-image.jpg")
         .isPublic(true)
         .averageRating(4.2)
         .build();

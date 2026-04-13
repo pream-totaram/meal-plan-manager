@@ -1,9 +1,9 @@
 package com.acedigital.meal_plan_manager.security;
 
-public record LoginRequest(String username, String password) {
-  public LoginRequest {
-    if (username == null || username.isBlank()) {
-      throw new IllegalArgumentException("Username cannot be empty");
-    }
-  }
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
+public record LoginRequest(
+    @NotBlank @Size(max = 64) String username,
+    @NotBlank @Size(max = 72) String password) {
 }
