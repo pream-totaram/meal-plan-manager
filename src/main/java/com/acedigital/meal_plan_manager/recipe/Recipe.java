@@ -1,7 +1,6 @@
 package com.acedigital.meal_plan_manager.recipe;
 
 import java.io.File;
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;

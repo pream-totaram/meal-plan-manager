@@ -1,3 +1,8 @@
+application:
+  security:
+    jwt:
+      secret-key: gde9bqQqixKiZp6YWdVWAgl8mkE4iMQ1EmPFMVbItvI=
+      expiration: 86400000
 server:
   error:
     include-message: always
