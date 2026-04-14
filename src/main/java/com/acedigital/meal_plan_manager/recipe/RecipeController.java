@@ -5,6 +5,8 @@ import java.util.List;
 
 import com.acedigital.meal_plan_manager.recipe.dto.CreateRecipeRequest;
 import com.acedigital.meal_plan_manager.recipe.dto.RecipeResponse;
+import com.acedigital.meal_plan_manager.recipe.dto.SaveRecipeRequest;
+import com.acedigital.meal_plan_manager.recipe.dto.ShareRecipeRequest;
 import com.acedigital.meal_plan_manager.recipe.dto.UpdateRecipeRequest;
 import com.acedigital.meal_plan_manager.user.User;
 
@@ -56,6 +58,36 @@ public class RecipeController {
     return ResponseEntity
         .created(URI.create("/api/recipes/" + saved.getId()))
         .body(RecipeResponse.from(saved));
+  }
+
+  /**
+   * Bookmark an existing recipe for the current user. Returns 201 with the
+   * saved row's id. Idempotent — saving the same recipe twice is a no-op.
+   */
+  @PostMapping("/save")
+  public ResponseEntity<SavedRecipe> saveRecipe(
+      @Valid @RequestBody SaveRecipeRequest request,
+      @AuthenticationPrincipal User currentUser) {
+    SavedRecipe saved = recipeService.saveRecipe(request.recipeId(), currentUser);
+    return ResponseEntity
+        .created(URI.create("/api/recipes/" + request.recipeId()))
+        .body(saved);
+  }
+
+  /**
+   * Share an owned recipe with another user. Returns 201 on success, 404 if
+   * the recipe doesn't exist or isn't owned by the caller, 404 if the target
+   * username doesn't exist, 400 if the caller tries to share with themselves.
+   */
+  @PostMapping("/share")
+  public ResponseEntity<SharedRecipe> shareRecipe(
+      @Valid @RequestBody ShareRecipeRequest request,
+      @AuthenticationPrincipal User currentUser) {
+    SharedRecipe shared = recipeService.shareRecipe(
+        request.recipeId(), request.shareWithUsername(), currentUser);
+    return ResponseEntity
+        .created(URI.create("/api/recipes/" + request.recipeId()))
+        .body(shared);
   }
 
   @PutMapping("/{id}")

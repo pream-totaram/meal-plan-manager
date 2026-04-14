@@ -4,6 +4,7 @@ import java.util.Date;
 
 import javax.crypto.SecretKey;
 
+
 import org.springframework.security.core.userdetails.UserDetails;
 
 import io.jsonwebtoken.Claims;
@@ -64,13 +65,11 @@ public class JwtService {
    */
   public boolean isTokenValid(String token, UserDetails userDetails) {
     try {
+      // parseClaims itself throws ExpiredJwtException for expired tokens,
+      // so reaching the subject comparison already implies a live token.
       Claims claims = parseClaims(token);
       String subject = claims.getSubject();
-      Date exp = claims.getExpiration();
-      return subject != null
-          && subject.equals(userDetails.getUsername())
-          && exp != null
-          && exp.after(new Date());
+      return subject != null && subject.equals(userDetails.getUsername());
     } catch (JwtException | IllegalArgumentException e) {
       return false;
     }

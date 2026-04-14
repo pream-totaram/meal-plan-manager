@@ -11,6 +11,9 @@ import org.springframework.security.web.SecurityFilterChain;
 
 import com.acedigital.meal_plan_manager.recipe.RecipeRepository;
 import com.acedigital.meal_plan_manager.recipe.RecipeService;
+import com.acedigital.meal_plan_manager.recipe.SavedRecipeRepository;
+import com.acedigital.meal_plan_manager.recipe.SharedRecipeRepository;
+import com.acedigital.meal_plan_manager.user.UserRepository;
 
 import org.springframework.boot.test.context.TestConfiguration;
 
@@ -37,8 +40,12 @@ public class WebSecurityTestConfig {
   }
 
   @Bean
-  public RecipeService recipeService(RecipeRepository recipeRepository) {
-    return new RecipeService(recipeRepository);
+  public RecipeService recipeService(RecipeRepository recipeRepository,
+      SavedRecipeRepository savedRecipeRepository,
+      SharedRecipeRepository sharedRecipeRepository,
+      UserRepository userRepository) {
+    return new RecipeService(recipeRepository, savedRecipeRepository,
+        sharedRecipeRepository, userRepository);
   }
 
   @Bean

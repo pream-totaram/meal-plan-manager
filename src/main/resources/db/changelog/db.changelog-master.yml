@@ -5,4 +5,8 @@ databaseChangeLog:
       file: db/changelog/v1.0/02-create-recipe-table.yml
   - include:
       file: db/changelog/v1.0/03-add-username-unique.yml
+  - include:
+      file: db/changelog/v1.0/04-create-saved-recipes-table.yml
+  - include:
+      file: db/changelog/v1.0/05-create-shared-recipes-table.yml
 

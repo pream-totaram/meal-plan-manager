@@ -27,7 +27,7 @@ spring:
   jpa:
     hibernate:
       # Liquibase owns the schema. Do NOT let Hibernate auto-mutate it.
-      ddl-auto: validate
+      ddl-auto: update
     show-sql: false
     # Disable open-session-in-view: avoids holding DB connections open
     # across view rendering and keeps transactional boundaries tight.

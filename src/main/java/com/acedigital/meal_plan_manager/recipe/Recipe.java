@@ -79,7 +79,7 @@ public class Recipe {
   @Column
   private Boolean isPublic;
 
-  @Column
+  @Column(name = "average_rating", columnDefinition = "numeric")
   private Double averageRating;
 
   @Column

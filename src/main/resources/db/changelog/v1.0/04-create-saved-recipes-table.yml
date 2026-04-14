@@ -1,0 +1,51 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: developer
+      changes:
+        - createTable:
+            tableName: saved_recipes
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: recipe_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: saved_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+                  defaultValueComputed: CURRENT_TIMESTAMP
+        - addUniqueConstraint:
+            tableName: saved_recipes
+            columnNames: user_id, recipe_id
+            constraintName: uq_saved_recipes_user_recipe
+        - addForeignKeyConstraint:
+            baseTableName: saved_recipes
+            baseColumnNames: user_id
+            constraintName: fk_saved_recipes_user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            onDelete: CASCADE
+            onUpdate: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: saved_recipes
+            baseColumnNames: recipe_id
+            constraintName: fk_saved_recipes_recipe_id
+            referencedTableName: recipes
+            referencedColumnNames: id
+            onDelete: CASCADE
+            onUpdate: CASCADE

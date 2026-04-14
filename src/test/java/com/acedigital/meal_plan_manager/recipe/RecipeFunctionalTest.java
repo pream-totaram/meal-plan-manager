@@ -1,59 +1,53 @@
 package com.acedigital.meal_plan_manager.recipe;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import com.acedigital.meal_plan_manager.user.User;
+import com.acedigital.meal_plan_manager.user.UserRepository;
 
-import javax.security.auth.Subject;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.persistence.EntityManager;
 
-// import com.acedigital.meal_plan_manager.security.WebSecurityConfig;
-import com.acedigital.meal_plan_manager.user.User;
-import com.acedigital.meal_plan_manager.user.UserRepository;
-import com.fasterxml.jackson.core.JsonProcessingException;
-
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-import org.mockito.Mock;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.context.annotation.Import;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.security.test.context.support.WithUserDetails;
-import org.springframework.test.context.ActiveProfiles;
-
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+/**
+ * Functional coverage for the CRUD half of {@link RecipeController}:
+ * GET (list + by-id), POST create, PUT update, DELETE soft-delete. The
+ * /save and /share endpoints have their own dedicated test classes.
+ */
+@SpringBootTest
+@AutoConfigureMockMvc
 @ActiveProfiles("test")
-// @Import(WebSecurityConfig.class)
-@Disabled
+@Transactional
 public class RecipeFunctionalTest {
 
-  @LocalServerPort
-  private int port;
-
   @Autowired
-  private TestRestTemplate restTemplate;
-
-  @Autowired
-  private RecipeRepository recipeRepository;
+  private MockMvc mockMvc;
 
   @Autowired
   private UserRepository userRepository;
+
+  @Autowired
+  private RecipeRepository recipeRepository;
 
   @Autowired
   private PasswordEncoder passwordEncoder;
@@ -61,125 +55,205 @@ public class RecipeFunctionalTest {
   @Autowired
   private EntityManager entityManager;
 
-  @Mock
-  private Subject subject;
+  private User owner;
+  private User otherUser;
+  private Recipe recipe1;
+  private Recipe recipe2;
 
-  @BeforeAll
+  @BeforeEach
   void setUp() {
+    owner = persistUser("owner");
+    otherUser = persistUser("other");
 
-    // Create and save a test user
-    User user = new User();
-    user.setUsername("somebody");
-    user.setPassword(passwordEncoder.encode("password"));
-    user.setEmail("somebody@mail.com");
-    userRepository.save(user);
+    recipe1 = recipeRepository.save(Recipe.builder()
+        .title("Spaghetti Carbonara").description("Classic Italian")
+        .prepTime(15).cookTime(20).user(owner).build());
+    recipe2 = recipeRepository.save(Recipe.builder()
+        .title("Chicken Curry").description("Spicy")
+        .prepTime(20).cookTime(30).user(owner).build());
+    // Belongs to someone else — must never appear in owner's responses.
+    recipeRepository.save(Recipe.builder()
+        .title("Stranger Food").user(otherUser).build());
+  }
 
-    // Create test recipes
-    Recipe recipe1 = Recipe.builder().title("Spaghetti Carbonara").description("Classic Italian pasta dish")
-        .prepTime(15).cookTime(20).user(user).build();
+  private User persistUser(String prefix) {
+    User u = new User();
+    u.setUsername(prefix + "-" + System.nanoTime());
+    u.setEmail(u.getUsername() + "@example.com");
+    u.setPassword(passwordEncoder.encode("password"));
+    return userRepository.save(u);
+  }
 
-    Recipe recipe2 = Recipe.builder().title("Chicken Curry").description("Spicy Indian curry").prepTime(20)
-        .cookTime(30).user(user).build();
+  // ---- GET /api/recipes ----------------------------------------------------
 
-    Recipe recipe3 = Recipe.builder().title("Caesar Salad").description("Fresh romaine lettuce with Caesar dressing")
-        .prepTime(10).cookTime(0).user(user).build();
-
-    Recipe deletedRecipe = Recipe.builder().title("Deleted Recipe")
-        .description("This recipe should not appear in results").prepTime(5).cookTime(10).deleted(true)
-        .deletedAt(LocalDateTime.now()).user(user).build();
-
-    recipeRepository.saveAll(Arrays.asList(recipe1, recipe2, recipe3, deletedRecipe));
+  @Test
+  void getMyRecipes_returnsOnlyOwnedRecipes() throws Exception {
+    mockMvc.perform(get("/api/recipes").with(user(owner)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(2))
+        .andExpect(jsonPath("$[*].title",
+            Matchers.containsInAnyOrder("Spaghetti Carbonara", "Chicken Curry")));
   }
 
   @Test
-  public void shouldReturnAllRecipesWhenGetIsCalled() {
-    ResponseEntity<List<Recipe>> response = restTemplate.exchange("/api/recipes",
-        HttpMethod.GET, null,
-        new ParameterizedTypeReference<List<Recipe>>() {
-        });
-    assertTrue(response.getStatusCode().is2xxSuccessful());
-    List<Recipe> recipes = response.getBody();
-    assertTrue(recipes.size() == 3);
-    assertTrue(recipes.stream().anyMatch(recipe -> recipe.getTitle().equals("Spaghetti Carbonara")));
+  void getMyRecipes_requiresAuthentication() throws Exception {
+    mockMvc.perform(get("/api/recipes"))
+        .andExpect(status().isUnauthorized());
+  }
+
+  // ---- GET /api/recipes/{id} ----------------------------------------------
+
+  @Test
+  void getRecipeById_returnsRecipeOwnedByCaller() throws Exception {
+    mockMvc.perform(get("/api/recipes/" + recipe1.getId()).with(user(owner)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.title").value("Spaghetti Carbonara"))
+        .andExpect(jsonPath("$.prepTime").value(15));
   }
 
   @Test
-  public void shouldReturnCorrectRecipeDetailsWhenGetByIdIsCalled() {
-    ResponseEntity<Recipe> response = restTemplate.getForEntity("/api/recipes/1",
-        Recipe.class);
-    assertTrue(response.getStatusCode().is2xxSuccessful());
-    Recipe recipe = response.getBody();
-    assertTrue(recipe.getTitle().equals("Spaghetti Carbonara"));
-    assertTrue(Objects.isNull(recipe.getInstructions()));
-    assertTrue(Objects.isNull(recipe.getServings()));
-    assertTrue(recipe.getPrepTime() == 15);
-    assertTrue(recipe.getCookTime() == 20);
+  void getRecipeById_returnsNotFoundForRecipeOwnedByAnother() throws Exception {
+    mockMvc.perform(get("/api/recipes/" + recipe1.getId()).with(user(otherUser)))
+        .andExpect(status().isNotFound());
   }
 
   @Test
-  public void shouldCreateNewRecipeWhenPostIsCalled() throws JsonProcessingException {
-    Recipe newRecipe = Recipe.builder()
-        .title("Tacos")
-        .description("Marlin tacos from the Mexican coast.")
-        .instructions("Put stuff into tortillas.")
-        .prepTime(10)
-        .cookTime(25)
-        .servings(3)
-        .difficulty(Difficulty.EASY)
-        .cuisineType(CuisineType.MEXICAN)
-        .imageUrl("https://example.com/new-test-image.jpg")
-        .isPublic(false)
-        .averageRating(3.8)
-        .build();
+  void getRecipeById_returnsNotFoundForUnknownId() throws Exception {
+    mockMvc.perform(get("/api/recipes/999999").with(user(owner)))
+        .andExpect(status().isNotFound());
+  }
 
-    ResponseEntity<String> response = restTemplate.postForEntity("/api/recipes",
-        newRecipe, String.class);
+  // ---- POST /api/recipes ---------------------------------------------------
 
-    System.out.println(response.getStatusCode());
+  @Test
+  void createRecipe_persistsAndReturns201WithLocation() throws Exception {
+    String body = """
+        {"title":"Tacos","description":"Marlin tacos","instructions":"Assemble.",
+         "prepTime":10,"cookTime":25,"servings":3,
+         "difficulty":"EASY","cuisineType":"MEXICAN",
+         "imageUrl":"https://example.com/img.jpg","isPublic":false}
+        """;
 
-    // assertTrue(response.getStatusCode().is2xxSuccessful());
-    // assertTrue(response.getHeaders().get("Location").get(0).contains("/api/recipes/"));
+    mockMvc.perform(post("/api/recipes")
+            .with(user(owner))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(body))
+        .andExpect(status().isCreated())
+        .andExpect(header().string("Location", Matchers.containsString("/api/recipes/")))
+        .andExpect(jsonPath("$.title").value("Tacos"))
+        // averageRating / totalReviews must be server-controlled, not echoed
+        // from the (absent) request body.
+        .andExpect(jsonPath("$.averageRating").value(0.0))
+        .andExpect(jsonPath("$.totalReviews").value(0));
   }
 
   @Test
-  public void shouldUpdateRecipeWhenPutIsCalled() {
-    Recipe update = Recipe.builder()
-        .title("Updated Spaghetti Carbonara")
-        .description("Updated version of the spaghetti carbonara recipe.")
-        .instructions("Instructions for making the updated spaghetti carbonara.")
-        .prepTime(10)
-        .cookTime(20)
-        .servings(4)
-        .difficulty(Difficulty.EASY)
-        .cuisineType(CuisineType.ITALIAN)
-        .imageUrl("https://example.com/updated-test-image.jpg")
-        .isPublic(true)
-        .averageRating(4.2)
-        .build();
-
-    restTemplate.put("/api/recipes/1", update);
-
-    ResponseEntity<Recipe> response = restTemplate.getForEntity("/api/recipes/1",
-        Recipe.class);
-    assertTrue(response.getStatusCode().is2xxSuccessful());
-    Recipe updatedRecipe = response.getBody();
-    assertTrue(updatedRecipe.getTitle().equals(update.getTitle()));
+  void createRecipe_rejectsBlankTitle() throws Exception {
+    String body = "{\"title\":\"\"}";
+    mockMvc.perform(post("/api/recipes")
+            .with(user(owner))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(body))
+        .andExpect(status().isBadRequest());
   }
 
   @Test
-  public void shouldSoftDeleteRecipeWhenDeleteIsCalled() {
-    Recipe recipe = recipeRepository.findById(2L).orElse(null);
-    assertTrue(recipe != null);
-    assertTrue(!recipe.getDeleted());
-    restTemplate.delete("/api/recipes/2");
-    assertTrue(recipeRepository.findById(2L).isEmpty());
+  void createRecipe_rejectsNonHttpImageUrl() throws Exception {
+    String body = """
+        {"title":"x","imageUrl":"javascript:alert(1)"}
+        """;
+    mockMvc.perform(post("/api/recipes")
+            .with(user(owner))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(body))
+        .andExpect(status().isBadRequest());
+  }
 
+  @Test
+  void createRecipe_requiresAuthentication() throws Exception {
+    mockMvc.perform(post("/api/recipes")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"title\":\"x\"}"))
+        .andExpect(status().isUnauthorized());
+  }
+
+  // ---- PUT /api/recipes/{id} -----------------------------------------------
+
+  @Test
+  void updateRecipe_modifiesOwnedRecipe() throws Exception {
+    String body = """
+        {"title":"Updated","description":"d","instructions":"i",
+         "prepTime":1,"cookTime":2,"servings":3,
+         "difficulty":"EASY","cuisineType":"ITALIAN",
+         "imageUrl":"https://example.com/x.jpg","isPublic":true}
+        """;
+
+    mockMvc.perform(put("/api/recipes/" + recipe1.getId())
+            .with(user(owner))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(body))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.title").value("Updated"));
+  }
+
+  @Test
+  void updateRecipe_returnsNotFoundForRecipeOwnedByAnother() throws Exception {
+    String body = """
+        {"title":"Hijack","prepTime":1,"cookTime":1,"servings":1,
+         "imageUrl":""}
+        """;
+
+    mockMvc.perform(put("/api/recipes/" + recipe1.getId())
+            .with(user(otherUser))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(body))
+        .andExpect(status().isNotFound());
+  }
+
+  @Test
+  void updateRecipe_requiresAuthentication() throws Exception {
+    mockMvc.perform(put("/api/recipes/" + recipe1.getId())
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"title\":\"x\"}"))
+        .andExpect(status().isUnauthorized());
+  }
+
+  // ---- DELETE /api/recipes/{id} -------------------------------------------
+
+  @Test
+  void deleteRecipe_softDeletesOwnedRecipe() throws Exception {
+    mockMvc.perform(delete("/api/recipes/" + recipe2.getId()).with(user(owner)))
+        .andExpect(status().isNoContent());
+
+    entityManager.flush();
     entityManager.clear();
-    Recipe deletedRecipe = (Recipe) entityManager
-        .createNativeQuery("SELECT * FROM recipes WHERE id = 2", Recipe.class)
-        .getSingleResult();
 
-    assertTrue(deletedRecipe.getDeleted());
+    // @SQLRestriction filters deleted=true, so a normal lookup must miss.
+    assertTrue(recipeRepository.findById(recipe2.getId()).isEmpty());
+
+    // ...but the row must still exist with deleted=true (soft-delete, not
+    // hard-delete). Count via native query so @SQLRestriction can't hide it.
+    Number rowCount = (Number) entityManager
+        .createNativeQuery("SELECT COUNT(*) FROM recipes WHERE id = :id AND deleted = TRUE")
+        .setParameter("id", recipe2.getId())
+        .getSingleResult();
+    assertEquals(1, rowCount.intValue());
   }
 
+  @Test
+  void deleteRecipe_returnsNotFoundForRecipeOwnedByAnother() throws Exception {
+    mockMvc.perform(delete("/api/recipes/" + recipe1.getId()).with(user(otherUser)))
+        .andExpect(status().isNotFound());
+
+    // Recipe must remain undeleted.
+    Recipe still = recipeRepository.findById(recipe1.getId()).orElseThrow();
+    assertFalse(still.getDeleted());
+    assertEquals("Spaghetti Carbonara", still.getTitle());
+  }
+
+  @Test
+  void deleteRecipe_requiresAuthentication() throws Exception {
+    mockMvc.perform(delete("/api/recipes/" + recipe1.getId()))
+        .andExpect(status().isUnauthorized());
+  }
 }

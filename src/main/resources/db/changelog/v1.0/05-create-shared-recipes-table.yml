@@ -1,0 +1,64 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: developer
+      changes:
+        - createTable:
+            tableName: shared_recipes
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: recipe_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: shared_by_user_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: shared_with_user_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: shared_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+                  defaultValueComputed: CURRENT_TIMESTAMP
+        - addUniqueConstraint:
+            tableName: shared_recipes
+            columnNames: recipe_id, shared_with_user_id
+            constraintName: uq_shared_recipes_recipe_target
+        - addForeignKeyConstraint:
+            baseTableName: shared_recipes
+            baseColumnNames: recipe_id
+            constraintName: fk_shared_recipes_recipe_id
+            referencedTableName: recipes
+            referencedColumnNames: id
+            onDelete: CASCADE
+            onUpdate: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: shared_recipes
+            baseColumnNames: shared_by_user_id
+            constraintName: fk_shared_recipes_shared_by
+            referencedTableName: users
+            referencedColumnNames: id
+            onDelete: CASCADE
+            onUpdate: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: shared_recipes
+            baseColumnNames: shared_with_user_id
+            constraintName: fk_shared_recipes_shared_with
+            referencedTableName: users
+            referencedColumnNames: id
+            onDelete: CASCADE
+            onUpdate: CASCADE
